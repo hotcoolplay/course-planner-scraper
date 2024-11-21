@@ -2,7 +2,7 @@ import { Page, ElementHandle } from "puppeteer";
 import * as db from "../requirement-db";
 import * as util from "../../scraper-utilities.js";
 
-export async function fetchSequenceTable(page: Page, degreeId: number) {
+export async function fetchDegreeSequenceTable(page: Page, degreeId: number) {
   const selector = `::-p-xpath(//*[preceding-sibling::h4[text()='Study/Work Sequences Chart' or text()='Study/Work Sequence Chart']]/tbody)`;
   const tableBody = await page.$(selector);
   if (!tableBody)
@@ -11,6 +11,7 @@ export async function fetchSequenceTable(page: Page, degreeId: number) {
     const rows = await tableBody.$$(`::-p-xpath(./tr)`);
     let sequencesInProgram = 0;
     let programsOrDegrees: db.IProgramOrDegreeId[] = [];
+    const sequenceNameExists = await existsSequenceName(page);
     for (const row of rows) {
       const sequence: Sequence = {
         name: null,
@@ -36,11 +37,11 @@ export async function fetchSequenceTable(page: Page, degreeId: number) {
             programOrDegreeText,
             degreeId
           );
-          if (await existsSequenceName(page)) {
+          if (sequenceNameExists) {
             ++i;
             sequence.name = await data[i].evaluate((el) => el.textContent);
           }
-        } else if ((await existsSequenceName(page)) && i === 0) {
+        } else if (sequenceNameExists && i === 0) {
           sequence.name = await data[i].evaluate((el) => el.textContent);
         } else {
           const term = await data[i].evaluate((el) => el.textContent);
@@ -135,13 +136,50 @@ async function convertProgramOrDegree(
   return ids;
 }
 
+export async function fetchMajorSequenceTable(page: Page, majorId: number) {
+  const selector = `::-p-xpath(//*[preceding-sibling::h4[text()='Study/Work Sequences Chart' or text()='Study/Work Sequence Chart' or text()='Study/Work Sequence Information Chart']]/tbody)`;
+  const tableBody = await page.$(selector);
+  if (!tableBody) console.log(`No sequence table found for ${majorId}.`);
+  else {
+    const rows = await tableBody.$$(`::-p-xpath(./tr)`);
+    let majors: number[] = [];
+    const sequenceNameExists = await existsSequenceName(page);
+    for (const row of rows) {
+      const sequence: Sequence = {
+        name: null,
+        sequence: [],
+      };
+      const data = await row.$$(`::-p-xpath(./td)`);
+      for (let i = 0; i < data.length; ++i) {
+        //If no sequences in major then this is a new row to add sequences too
+        if (sequenceNameExists && i === 0) {
+          sequence.name = await data[i].evaluate((el) => el.textContent);
+        } else {
+          const term = await data[i].evaluate((el) => el.textContent);
+          if (term && !term.includes("†")) sequence.sequence.push(term);
+        }
+      }
+      for (const major of majors) {
+        const majorOrDegree: db.IProgramOrDegreeId = {
+          programId: major,
+          degreeId: null,
+        };
+        db.insertSequence(majorOrDegree, sequence);
+      }
+    }
+  }
+}
+
 async function existsSequenceName(page: Page): Promise<boolean> {
-  const selector = `::-p-xpath(//*[preceding-sibling::h4[text()='Study/Work Sequences Chart' or text()='Study/Work Sequence Chart']]/thead)`;
+  const selector = `::-p-xpath(//*[preceding-sibling::h4[text()='Study/Work Sequences Chart' or text()='Study/Work Sequence Chart' or text()='Study/Work Sequence Information Chart']]/thead)`;
   const tableHead = await page.$(selector);
   if (!tableHead) throw new Error(`No table head!`);
   else {
     const cols = await tableHead.$$(`::-p-xpath(./tr/th)`);
-    if ((await cols[1].evaluate((el) => el.textContent)) !== "S/S")
+    if (
+      (await cols[1].evaluate((el) => el.textContent)) !== "S/S" &&
+      (await cols[0].evaluate((el) => el.textContent)) !== "Sequence"
+    )
       return false;
     else return true;
   }

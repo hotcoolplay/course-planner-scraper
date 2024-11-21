@@ -56,6 +56,20 @@ export async function searchMajorCoop(name: string): Promise<boolean> {
   return result.rows[0].coop;
 }
 
+export async function fetchProgramId(name: string) {
+  const result = await pool.query(
+    `SELECT id FROM programs
+    WHERE name = $1`,
+    [name]
+  );
+  try {
+    return result.rows[0].id;
+  } catch (err) {
+    console.error(err);
+    throw new Error(`Couldn't find ID for ${name}`);
+  }
+}
+
 //Allows for narrowing based on major type, parent major, parent degree
 export async function searchProgramIds(
   name: string,
@@ -121,7 +135,7 @@ export async function searchProgramIds(
   } catch (err) {
     console.error(err);
     throw new Error(
-      `Couldn't find ID for ${name}${opts ? ", " + Object.entries(opts) : null}}!`
+      `Couldn't find ID for ${name}${opts ? ", " + Object.entries(opts) : ""}!`
     );
   }
 }

@@ -1,6 +1,7 @@
 import { Browser, Page, ElementHandle } from "puppeteer";
 import * as util from "../scraper-utilities.js";
 import * as db from "./scraper-db.js";
+import { parseMajorRequirements } from "../requirement-parser/requirements.js";
 
 interface ProgramProperties {
   name: string;
@@ -88,17 +89,22 @@ async function scrapeMajors(
 
   const systemsHeading = `Systems of Study`;
   const systems = await util.fetchSectionContent(page, systemsHeading, false);
+
   const regular =
     systems.length !== 0
       ? determineSystems(systems, "Regular")
       : await db.searchMajorRegular(
           programProperties.name.split(" (")[0] + "%"
         );
+
   const coop =
     systems.length !== 0
       ? determineSystems(systems, "Co-operative")
       : await db.searchMajorCoop(programProperties.name.split(" (")[0] + "%");
 
+  // Grab id of major to send into requirements section
+  const majorId = await db.fetchProgramId(programProperties.name);
+  await parseMajorRequirements(page, majorId);
   if ((regular || coop) && regular !== null && coop !== null) {
     return {
       ...programProperties,

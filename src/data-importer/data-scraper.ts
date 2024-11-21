@@ -62,6 +62,7 @@ export async function requestDegrees() {
   const linkSelector = "xpath///li/div/div/div/div/ul//a";
   await page.waitForSelector(linkSelector);
   const links = await page.$$(linkSelector);
+  links.push;
   for (let i = 0; i < links.length; ++i) {
     const link = await page.evaluate(
       (el: Element) => (<HTMLAnchorElement>el).href,

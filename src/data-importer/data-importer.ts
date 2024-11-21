@@ -6,6 +6,6 @@ import {
 
 export async function startScraping() {
   //requestCourses();
-  //requestPrograms();
-  requestDegrees();
+  requestPrograms();
+  //requestDegrees();
 }
