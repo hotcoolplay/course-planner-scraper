@@ -142,7 +142,6 @@ export async function fetchMajorSequenceTable(page: Page, majorId: number) {
   if (!tableBody) console.log(`No sequence table found for ${majorId}.`);
   else {
     const rows = await tableBody.$$(`::-p-xpath(./tr)`);
-    let majors: number[] = [];
     const sequenceNameExists = await existsSequenceName(page);
     for (const row of rows) {
       const sequence: Sequence = {
@@ -159,13 +158,11 @@ export async function fetchMajorSequenceTable(page: Page, majorId: number) {
           if (term && !term.includes("†")) sequence.sequence.push(term);
         }
       }
-      for (const major of majors) {
-        const majorOrDegree: db.IProgramOrDegreeId = {
-          programId: major,
-          degreeId: null,
-        };
-        db.insertSequence(majorOrDegree, sequence);
-      }
+      const majorOrDegree: db.IProgramOrDegreeId = {
+        programId: majorId,
+        degreeId: null,
+      };
+      db.insertSequence(majorOrDegree, sequence);
     }
   }
 }
