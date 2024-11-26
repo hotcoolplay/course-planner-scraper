@@ -5,7 +5,7 @@ import {
 } from "./data-scraper.js";
 
 export async function startScraping() {
-  //requestCourses();
+  requestCourses();
   requestPrograms();
-  //requestDegrees();
+  requestDegrees();
 }

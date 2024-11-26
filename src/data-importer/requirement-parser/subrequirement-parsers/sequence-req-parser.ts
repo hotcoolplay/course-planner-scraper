@@ -45,7 +45,8 @@ export async function fetchDegreeSequenceTable(page: Page, degreeId: number) {
           sequence.name = await data[i].evaluate((el) => el.textContent);
         } else {
           const term = await data[i].evaluate((el) => el.textContent);
-          if (term && !term.includes("†")) sequence.sequence.push(term);
+          if (term && !term.includes("†") && !term.match(/^(?:\s)+$/))
+            sequence.sequence.push(term);
         }
       }
       for (const programOrDegree of programsOrDegrees) {
@@ -155,7 +156,8 @@ export async function fetchMajorSequenceTable(page: Page, majorId: number) {
           sequence.name = await data[i].evaluate((el) => el.textContent);
         } else {
           const term = await data[i].evaluate((el) => el.textContent);
-          if (term && !term.includes("†")) sequence.sequence.push(term);
+          if (term && !term.includes("†") && !term.match(/^(?:\s)+$/))
+            sequence.sequence.push(term);
         }
       }
       const majorOrDegree: db.IProgramOrDegreeId = {
